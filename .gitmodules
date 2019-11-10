@@ -1,0 +1,6 @@
+[submodule "xLua"]
+	path = xLua
+	url = https://github.com/Tencent/xLua.git
+[submodule "zstd"]
+	path = zstd
+	url = https://github.com/facebook/zstd.git
