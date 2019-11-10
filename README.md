@@ -3,6 +3,16 @@
 Unity + xLua環境でzstandardを扱うため、<br>
 xLuaビルドにzstandard wrapper c apiを組み込んだものです。
 
+# tasks
+
+* (done)decompress
+* decompress with dictionary
+* stream decompress
+* stream decompress with dictionary
+* lua test code
+
+Unity上では基本解凍のみと考えているため、compress実装はしない予定です。
+
 # motivation
 
 近年の優秀な可逆圧縮アルゴリズムにzstandardがあります。<br>
