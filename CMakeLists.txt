@@ -67,6 +67,7 @@ set_property(
 	)
 list(APPEND THIRDPART_INC  ../../zstd/lib)
 list(APPEND THIRDPART_INC  ../../zstd/lib/common)
+list(APPEND THIRDPART_INC  ../../zstd/lib/decompress)
 set (THIRDPART_SRC ${THIRDPART_SRC} ${ZSTD_SRC})
 #end zstd
 
