@@ -6,10 +6,10 @@ xLuaビルドにzstandard wrapper c apiを組み込んだものです。
 # tasks
 
 * (done)decompress
-* decompress with dictionary
+* (done)decompress with dictionary
 * stream decompress
 * stream decompress with dictionary
-* lua test code
+* (done)lua test code
 
 Unity上では基本解凍のみと考えているため、compress実装はしない予定です。
 
