@@ -31,7 +31,11 @@ static const luaL_Reg zstd_functions[] = {
 
 LUALIB_API int luaopen_zstd(lua_State* L)
 {
+#if LUA_VERSION_NUM >= 502
+  luaL_newlib(L, zstd_functions);
+#else
   luaL_register(L, "zstd", zstd_functions);
+#endif
   return 1;
 }
 
