@@ -13,6 +13,15 @@
   #define debug_log( fmt, ... ) ((void)0)
 #endif
 
+#if LUA_VERSION_NUM >= 502
+  #define LUA_REGISTER(l, n, f) \
+    luaL_newlib(l, f)
+#else
+  #define LUA_REGISTER(l, n, f) \
+    luaL_register(l, n, f);
+#endif
+ 
+
 /***************************************************************
  * Basic functions 
  * *************************************************************/
@@ -165,7 +174,7 @@ static int loadDictionary(lua_State* L)
   if(luaL_newmetatable(L, ZSTD_DICTHANDLE))
   {
     // new method table
-    luaL_newlib(L, decompress_dict_functions);
+    LUA_REGISTER(L, ZSTD_DICTHANDLE, decompress_dict_functions);
 
     // metatable.__index = method table
     lua_setfield(L, -2, "__index");
@@ -192,11 +201,7 @@ static const luaL_Reg zstd_functions[] = {
 
 LUALIB_API int luaopen_zstd(lua_State* L)
 {
-#if LUA_VERSION_NUM >= 502
-  luaL_newlib(L, zstd_functions);
-#else
-  luaL_register(L, "zstd", zstd_functions);
-#endif
+  LUA_REGISTER(L, "zstd", zstd_functions);
   return 1;
 }
 
