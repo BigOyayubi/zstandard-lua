@@ -32,6 +32,16 @@ osx-lua53: prepare
 osx-luajit: prepare
 	cd xLua/build/ && sh make_osx_luajit.sh
 
+## Build iOS Lua53 in xLua
+ios-lua53: prepare
+	cd xLua/build/ && sh make_ios_lua53.sh
+
+## Build iOS LuaJIT in xLua
+ios-luajit: prepare
+	cd xLua/build/ && sh make_ios_luajit.sh
+
+
+
 # for local test 
 
 UNAME := $(shell uname)
