@@ -5,7 +5,6 @@
 ## Install dependencies
 prepare:
 	go get github.com/Songmu/make2help/cmd/make2help
-	(cd xLua && git clean -fd && git reset --hard HEAD)
 	cp CMakeLists.txt xLua/build/
 
 ## Build linux 32bit Lua53 in xLua
