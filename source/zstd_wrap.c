@@ -62,6 +62,46 @@ static int decompress(lua_State* L)
   return 1;
 }
 
+/*
+ * Compress without dictionary
+ * lua sample
+ *   local zstd = require('zstd')
+ *   local src = ("abc"):rep(1000)
+ *   local compressedSize, compressed = zstd.compress(src, string.len(src))
+ */
+static int compress(lua_State* L)
+{
+  size_t len = 0;
+  const char* src     = (const char*)luaL_checklstring(L, 1, &len);
+  size_t      srcSize = (size_t)     luaL_checkinteger(L, 2      );
+  int         level   = (int)        luaL_optinteger  (L, 3, 1   );
+
+  debug_log("src     : %p\n", src);
+  debug_log("srcSize : %zu\n", srcSize);
+  debug_log("level   : %d\n", level);
+
+  size_t const dstSize = ZSTD_compressBound(srcSize);
+
+  debug_log("dstSize : %zu\n", dstSize);
+
+  luaL_Buffer lbuf;
+  char* cbuf = luaL_buffinitsize(L, &lbuf, dstSize);
+
+  debug_log("cbuf    : %p\n", cbuf);
+
+  size_t result = ZSTD_compress(cbuf, dstSize, src, srcSize, level);
+  if(ZSTD_isError(result))
+  {
+    lua_pushliteral(L, "call to ZSTD_compress failed");
+    lua_error(L);
+  }
+
+  debug_log("result  : %zu\n", result);
+  lua_pushinteger(L, result);
+  luaL_pushresultsize(&lbuf, result);
+  return 2;
+}
+
 /***************************************************************
  * Dictionary Decompress
  * *************************************************************/
@@ -193,11 +233,11 @@ static int loadDictionary(lua_State* L)
 }
 
 static const luaL_Reg zstd_functions[] = {
-  { "decompress",     decompress     },
-  { "isError",        isError        },
-  { "loadDictionary", loadDictionary },
-  { NULL,             NULL           }
-};
+    {"compress",   compress},
+    {"decompress", decompress},
+    {"isError", isError},
+    {"loadDictionary", loadDictionary},
+    {NULL, NULL}};
 
 LUALIB_API int luaopen_zstd(lua_State* L)
 {

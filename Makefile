@@ -60,7 +60,13 @@ endif
 LUALIB     ?= zstd.so
 LUA_CFLAGS ?= -O2 -fPIC
 
-ZSTDOBJS    = zstd/lib/decompress/zstd_ddict.o zstd/lib/decompress/huf_decompress.o \
+ZSTDOBJS    = zstd/lib/compress/zstdmt_compress.o zstd/lib/compress/zstd_double_fast.o \
+	      zstd/lib/compress/zstd_fast.o zstd/lib/compress/zstd_compress_sequences.o \
+	      zstd/lib/compress/zstd_ldm.o zstd/lib/compress/hist.o \
+	      zstd/lib/compress/zstd_compress.o zstd/lib/compress/zstd_lazy.o \
+	      zstd/lib/compress/zstd_compress_literals.o zstd/lib/compress/huf_compress.o \
+	      zstd/lib/compress/zstd_opt.o zstd/lib/compress/fse_compress.o \
+              zstd/lib/decompress/zstd_ddict.o zstd/lib/decompress/huf_decompress.o \
               zstd/lib/decompress/zstd_decompress.o zstd/lib/decompress/zstd_decompress_block.o \
 	      zstd/lib/legacy/zstd_v05.o zstd/lib/legacy/zstd_v01.o \
 	      zstd/lib/legacy/zstd_v06.o zstd/lib/legacy/zstd_v02.o \
