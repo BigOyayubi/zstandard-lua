@@ -88,6 +88,8 @@ local dstSize = 12345
 local dst = (' '):rep(dstSize)
 local result = zstd.decompress( dst, dstSize, src, srcSize )
 print( zstd.isError(result) )
+local str = ("aaa"):rep(10)
+local result, compressed = zstd.compress( str, string.len(str) )
                 ");
             }        
         }
@@ -102,7 +104,7 @@ print( zstd.isError(result) )
 * (done)decompress with dictionary
 * stream decompress
 * stream decompress with dictionary
-* compress
+* (done)compress
 * compress with dictionary
 * stream compress
 * stream compress with dictionary
