@@ -96,7 +96,48 @@ local compressed = zstd.compress( str, string.len(str) )
     }
 }
 ```
+# APIs
 
+## setup
+
+```
+local zstd = require('zstd')
+```
+
+## compress
+
+```
+local data = ("abc"):rep(100)
+local compressed = zstd.compress( data, string.len(data) )
+```
+
+## compress with dictionary
+
+```
+local f = io.open('path/to/dict')
+local dictdata = f:read("*a")
+f:close()
+
+local level = 3 -- option
+local dict = zstd.loadCompressDictionary( dictdata, string.len(dictdata), level )
+local data = ("abc"):rep(100)
+local compressed = dict:compress( data, string.len(data) )
+```
+
+## decompress
+
+```
+local dst = (" "):rep(12345)
+local decompressedSize = zstd.decompress( dst, string.len(dst), src, string.len(src) )
+local isError = zstd.isError(decompressedSize) -- true or false
+```
+
+## decompress with dictionary
+
+```
+local dict = zstd.loadDecompressDictionary( dictdata, string.len(dictdata) )
+local decompressedSize = dict:decompress( dst, string.len(dst), src, string.len(src) )
+```
 
 # todo
 
