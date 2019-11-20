@@ -102,6 +102,176 @@ static int compress(lua_State* L)
 }
 
 /***************************************************************
+ * Streaming Decompress
+ * *************************************************************/
+typedef struct
+{
+  ZSTD_DCtx* dctx;
+  const char* src;
+  size_t srcSize;
+  size_t readSrcSize;
+} zstd_stream_decompress_dict_t;
+#define ZSTD_STREAM_DECOMPRESS_DICTHANDLE "zstd.stream_decomp_dictionary"
+
+static zstd_stream_decompress_dict_t *_get_zstd_stream_decompress_dict_t(lua_State *L, int index)
+{
+  return (zstd_stream_decompress_dict_t *)luaL_checkudata(L, index, ZSTD_STREAM_DECOMPRESS_DICTHANDLE);
+}
+
+static int zstd_stream_decompress_dict_tostring(lua_State *L)
+{
+  zstd_stream_decompress_dict_t *context = _get_zstd_stream_decompress_dict_t(L, 1);
+  lua_pushfstring(L, "%s (%p)", ZSTD_STREAM_DECOMPRESS_DICTHANDLE, context);
+  return 1;
+}
+
+static int zstd_stream_decompress_dict_gc(lua_State *L)
+{
+  zstd_stream_decompress_dict_t *context = _get_zstd_stream_decompress_dict_t(L, 1);
+  ZSTD_freeDCtx(context->dctx);
+  return 0;
+}
+
+static int setDecompressStream(lua_State* L)
+{
+  zstd_stream_decompress_dict_t *context = _get_zstd_stream_decompress_dict_t(L, 1);
+  size_t len = 0;
+  char *src = (char *)luaL_checklstring(L, 2, &len);
+  size_t srcSize = (size_t)luaL_checkinteger(L, 3);
+
+  ZSTD_DCtx_reset(context->dctx, ZSTD_reset_session_only);
+  context->src = src;
+  context->srcSize = srcSize;
+  context->readSrcSize = 0;
+
+  debug_log("src %p\n", context->src);
+  debug_log("srcSize %zu\n", context->srcSize);
+
+  return 0;
+}
+
+static int decompressStream(lua_State *L)
+{
+  zstd_stream_decompress_dict_t *context = _get_zstd_stream_decompress_dict_t(L, 1);
+
+  if(context->src == NULL)
+  {
+    lua_pushliteral(L, "call to decompressStream failed. src is NULL");
+    lua_error(L);
+  }
+  if(context->readSrcSize >= context->srcSize)
+  {
+    lua_pushstring(L, "");
+    lua_pushboolean(L, 1);
+    lua_pushinteger(L, 0);
+    lua_pushinteger(L, 0);
+    return 4;
+  }
+
+  size_t buffInSize = ZSTD_DStreamInSize();
+
+  const char* const readPtr = context->src + context->readSrcSize;
+
+  size_t readSize = context->srcSize - context->readSrcSize;
+  if (readSize > buffInSize)
+  {
+    readSize = buffInSize;
+  }
+
+  ZSTD_inBuffer input = {readPtr, readSize, 0};
+  context->readSrcSize += readSize;
+
+  luaL_Buffer buff;
+  luaL_buffinit(L, &buff);
+
+  size_t lastRet;
+  size_t decompressSize = 0;
+  while (input.pos < input.size)
+  {
+    char *tmp = luaL_prepbuffer(&buff);
+    ZSTD_outBuffer output = {tmp, LUAL_BUFFERSIZE, 0};
+    // when return code is zero, the frame is complete
+    size_t const ret = ZSTD_decompressStream(context->dctx, &output, &input);
+    if(ZSTD_isError(ret))
+    {
+      lua_pushliteral(L, "call to ZSTD_decompressStream failed");
+      lua_error(L);
+    }
+    lastRet = ret;
+    luaL_addsize(&buff, output.pos);
+    decompressSize += output.pos;
+  }
+
+  if(lastRet != 0)
+  {
+    lua_pushliteral(L, "call to ZSTD_decompressStream failed");
+    lua_error(L);
+  }
+
+  luaL_pushresult(&buff);
+  lua_pushboolean(L, context->readSrcSize >= context->srcSize);
+  lua_pushinteger(L, readSize);
+  lua_pushinteger(L, decompressSize);
+  return 4;
+}
+
+static const luaL_Reg decompress_stream_functions[] = {
+    {"set",        setDecompressStream},
+    {"decompress", decompressStream},
+    {NULL, NULL}
+};
+
+/*
+ * load zstd decompress stream
+ * lua sample
+ *   local zstd = require("zstd")
+ *   local stream = zstd.createDecompressStream()
+ *   local compressed = zstd.compress( text, #text )
+ *   local compressedSize = string.len(compressed)
+ *   stream:set(compressed, compressedSize)
+ *   repeat
+ *     local decompressed, done, read_in, read_out = stream:decompress()
+ *     -- do xxx
+ *   until done
+ */
+static int createDecompressStream(lua_State *L)
+{
+  ZSTD_DCtx *const dctx = ZSTD_createDCtx();
+  if (dctx == NULL)
+  {
+    lua_pushliteral(L, "call to ZSTD_createDCtx failed");
+    lua_error(L);
+  }
+  debug_log("dctx    %p\n", dctx);
+
+  zstd_stream_decompress_dict_t *context = (zstd_stream_decompress_dict_t *)lua_newuserdata(L, sizeof(zstd_stream_decompress_dict_t));
+  context->dctx = dctx;
+  context->src = NULL;
+  context->srcSize = 0;
+  context->readSrcSize = 0;
+
+  if (luaL_newmetatable(L, ZSTD_STREAM_DECOMPRESS_DICTHANDLE))
+  {
+    // new method table
+    LUA_REGISTER(L, ZSTD_STREAM_DECOMPRESS_DICTHANDLE, decompress_stream_functions);
+
+    // metatable.__index = method table
+    lua_setfield(L, -2, "__index");
+
+    // metatable.__tostring
+    lua_pushcfunction(L, zstd_stream_decompress_dict_tostring);
+    lua_setfield(L, -2, "__tostring");
+
+    // metatable.__gc
+    lua_pushcfunction(L, zstd_stream_decompress_dict_gc);
+    lua_setfield(L, -2, "__gc");
+  }
+  lua_setmetatable(L, -2);
+
+  return 1;
+}
+
+/***************************************************************
  * Dictionary Decompress
  * *************************************************************/
 
@@ -369,10 +539,13 @@ static const luaL_Reg zstd_functions[] = {
     {"isError", isError},
     {"loadDecompressDictionary", loadDecompressDictionary},
     {"loadCompressDictionary", loadCompressDictionary},
+    {"createDecompressStream", createDecompressStream},
     {NULL, NULL}};
 
 LUALIB_API int luaopen_zstd(lua_State* L)
 {
+
+
   LUA_REGISTER(L, "zstd", zstd_functions);
   return 1;
 }

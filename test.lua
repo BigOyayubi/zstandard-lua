@@ -111,3 +111,27 @@ describe("compress method with dictionary test", function()
   end)
 end)
 
+describe("stream decompress test", function()
+  it("create stream", function()
+    local stream = zstd.createDecompressStream()
+  end)
+  it("set data", function()
+    local stream = zstd.createDecompressStream()
+    local text = ("aaa"):rep(100)
+    stream:set( text, #text )
+  end)
+  it("decompress", function()
+    local stream = zstd.createDecompressStream()
+    local text = ("aaa"):rep(100)
+    local compressed = zstd.compress( text, #text )
+    stream:set( compressed, string.len(compressed) )
+    local t = {}
+    repeat
+      local decomp, done, read_in, read_out = stream:decompress()
+      table.insert(t, decomp)
+    until done
+    local decompressed = table.concat(t)
+    assert.are.Equal( text, decompressed )
+  end)
+
+end)

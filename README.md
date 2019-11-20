@@ -132,6 +132,21 @@ local decompressedSize = zstd.decompress( dst, string.len(dst), src, string.len(
 local isError = zstd.isError(decompressedSize) -- true or false
 ```
 
+## streaming decompress
+
+```
+local stream = zstd.createDecompressStream()
+local text = ("aaa"):rep(100)
+local compressed = zstd.compress( text, #text )
+stream:set( compressed, string.len(compressed) )
+local t = {}
+repeat
+  local decomp, done, read_in, read_out = stream:decompress()
+  table.insert(t, decomp)
+until done
+local decompressed = table.concat(t)
+```
+
 ## decompress with dictionary
 
 ```
@@ -143,7 +158,7 @@ local decompressedSize = dict:decompress( dst, string.len(dst), src, string.len(
 
 * (done)decompress
 * (done)decompress with dictionary
-* stream decompress
+* (done)stream decompress
 * stream decompress with dictionary
 * (done)compress
 * (done)compress with dictionary
