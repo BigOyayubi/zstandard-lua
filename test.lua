@@ -135,3 +135,29 @@ describe("stream decompress test", function()
   end)
 
 end)
+
+describe("stream compress test", function()
+  it("create stream", function()
+    local stream = zstd.createCompressStream()
+  end)
+  it("set data", function()
+    local stream = zstd.createCompressStream()
+    local text = ("aaa"):rep(100)
+    stream:set( text, #text )
+  end)
+  it("compress", function()
+    local stream = zstd.createCompressStream()
+    local text = ("aaa"):rep(100)
+    stream:set( text, #text )
+    local t = {}
+    repeat
+      local comp, done, read_in, read_out = stream:compress()
+      table.insert(t, comp)
+    until done
+    local compressed = table.concat(t)
+    local buf = (" "):rep( #text )
+    local result = zstd.decompress( buf, #buf, compressed, string.len(compressed) )
+    assert.are.Same( text, buf )
+  end)
+end)
+

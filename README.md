@@ -111,6 +111,20 @@ local data = ("abc"):rep(100)
 local compressed = zstd.compress( data, string.len(data) )
 ```
 
+## streaming compress
+
+```
+local stream = zstd.createCompressStream()
+local text = ("aaa"):rep(100)
+stream:set( text, #text )
+local t = {}
+repeat
+  local comp, done, read_in, read_out = stream:compress()
+  table.insert(t, comp)
+until done
+local compressed = table.concat(t)
+```
+
 ## compress with dictionary
 
 ```
@@ -162,7 +176,7 @@ local decompressedSize = dict:decompress( dst, string.len(dst), src, string.len(
 * stream decompress with dictionary
 * (done)compress
 * (done)compress with dictionary
-* stream compress
+* (done)stream compress
 * stream compress with dictionary
 * (done)lua test code
 * (done)osx build
